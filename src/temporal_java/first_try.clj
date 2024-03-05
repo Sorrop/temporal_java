@@ -182,6 +182,12 @@
                         (.build))]
     (ScheduleClient/newInstance service client-opts)))
 
+(defn ->schedule-spec [cron timezone]
+  (-> (ScheduleSpec/newBuilder)
+      (.setCronExpressions (Collections/singletonList cron))
+      (.setTimeZoneName timezone)
+      .build))
+
 (defn create-schedule
   [{:keys [workflow-id
            task-queue
@@ -201,10 +207,7 @@
                    (.setArguments (into-array Object [input]))
                    (.setOptions workflow-opts)
                    (.build))
-        schedule-spec (-> (ScheduleSpec/newBuilder)
-                          (.setCronExpressions (Collections/singletonList cron))
-                          (.setTimeZoneName​ timezone)
-                          .build)]
+        schedule-spec (->schedule-spec cron timezone)]
     (-> (Schedule/newBuilder)
         (.setAction action)
         (.setSpec schedule-spec)
@@ -245,10 +248,7 @@
              (reify
                io.temporal.workflow.Functions$Func1
                (apply [this input]
-                 (let [schedule-spec (-> (ScheduleSpec/newBuilder)
-                                         (.setCronExpressions (Collections/singletonList cron))
-                                         (.setTimeZoneName​ timezone)
-                                         (.build))
+                 (let [schedule-spec (->schedule-spec cron timezone)
                        builder (-> (Schedule/newBuilder
                                     (-> (.getDescription input)
                                         .getSchedule))
